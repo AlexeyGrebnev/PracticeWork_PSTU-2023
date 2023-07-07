@@ -1,0 +1,34 @@
+with recursive  t as
+(select t.id,
+        t.parent_id,
+        t."name" as leaf_name,
+        1 is_leaf,
+        t.id as leaf_id,
+        cast(null as varchar) as par_name 
+ from territories t
+ -- Элементы, у которых нет детей
+ where not exists (select 1 from territories t2
+                   where t2.parent_id = t.id) 
+ union all 
+ select par.id,
+        par.parent_id,
+        ch.leaf_name,
+        0,
+        ch.leaf_id,
+        par.name as par_name
+ from territories par,
+      t as ch
+ where is_leaf = 1
+),    A as (select *  FROM t  where is_leaf = 1
+), B as (select leaf_name, product_id, sum(fact_value) fact_value
+FROM A  
+inner join sales  
+on A.id = sales.territory_id
+group by leaf_name, product_id) 
+select territory_name, total, maximum from (
+select leaf_name as territory_name, fact_value,product_id,
+		sum(B.fact_value) over (partition by leaf_name rows between unbounded preceding and current row) as total, 
+		max(B.fact_value) over (partition by leaf_name rows between unbounded preceding and current row) as maximum, 
+		ROW_NUMBER() OVER(partition by leaf_name order by b.product_id desc  rows between unbounded preceding and current row) as row_num
+from B) g where row_num = 1
+order by territory_name desc 

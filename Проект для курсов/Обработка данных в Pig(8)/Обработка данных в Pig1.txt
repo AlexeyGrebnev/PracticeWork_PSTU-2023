@@ -1,0 +1,50 @@
+Описание задачи анализа данных:
+Необходимо проанализировать данные о продажах в интернет-магазине и вычислить общую сумму продаж по каждому товару за определенный период времени.
+
+Описание входного набора данных:
+Набор данных содержит информацию о продажах в интернет-магазине. Каждая запись содержит следующие поля:
+- Идентификатор продукта
+- Название продукта (prod)
+- Количество проданных единиц (amo)
+- Цена за единицу
+- Дата продажи (date)
+
+Небольшой фрагмент набора данных (не более 100 записей):
+date,	    store,    prod,  amo, pr
+2021-07-04,	Store1,	Product1,	8,	54
+2021-02-09,	Store2,	Product2,	12,	11
+2021-05-05,	Store3,	Product3,	43,	164
+2021-02-06,	Store4,	Product4,	54,	65
+2021-05-09,	Store5,	Product5,	77,	11
+2021-07-21,	Store6,	Product6,	12,	654
+2021-02-23,	Store7,	Product7,	5,	34
+
+Pig скрипт:
+
+-- Загрузка данных из HDFS (USING PigStorage(',') нужен для разделения данных запятой)
+sales = LOAD 'hdfs://host.docker.internal/path/to/test_dataset.csv' USING PigStorage(',') AS (date_f:chararray, store:chararray, prod:chararray, amo:int, pr:int);
+
+--Фильтрация данных для выбранного периода времени:
+
+sales_filter = FILTER sales BY date_f >= '2021-02-09' AND date_f <= '2021-07-04';
+
+-- Группировка данных по продукту
+grouped_sales = GROUP sales_filter BY prod;
+
+--Вычисление суммы продаж
+sum_sales = FOREACH grouped_sales GENERATE group AS prod, sum((CAST sales_filter.amo AS int) * (CAST sales_filter.pr AS int)) AS total_sales;
+
+-- Сохранение результатов в csv-файл
+STORE sum_sales INTO 'hdfs://host.docker.internal/path/to/sales_sum.csv' USING PigStorage(',');
+
+Инструкция по запуску скрипта:
+
+1. Установите Apache Pig на вашу систему, если он еще не установлен.
+2. Сохраните скрипт в файл с расширением ".pig", например "sales_analize.pig".
+3. Загрузите данные в HDFS, например, в папку "/path/to/test_dataset.csv".
+4. Запустите Pig в интерактивном режиме с помощью команды "pig".
+5. Введите команду "run /path/to/sales_analize.pig" для запуска скрипта.
+6. Дождитесь завершения выполнения скрипта.
+7. Результаты будут сохранены в csv-файле, например, в папке "/path/to/sales_sum.csv" в HDFS.
+
+

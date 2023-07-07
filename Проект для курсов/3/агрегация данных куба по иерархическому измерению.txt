@@ -1,0 +1,32 @@
+with recursive  t as
+(select t.id,
+        t.parent_id,
+        t."name" as leaf_name,
+        1 is_leaf,
+        t.id as leaf_id,
+        cast(null as varchar) as par_name 
+ from territories t
+ where not exists (select 1 from territories t2
+                   where t2.parent_id = t.id) 
+ union all 
+ select par.id,
+        par.parent_id,
+        ch.leaf_name,
+        0,
+        ch.leaf_id,
+        par.name as par_name
+ from territories par,
+      t as ch
+ where ch.parent_id  = par.id
+)
+select s.product_id,
+       t.id,
+       s.sales_date,
+       sum(s.fact_value) as fact_value
+from t
+join sales s 
+on s.territory_id  = t.leaf_id
+group by s.product_id,
+         t.id,
+         s.sales_date
+ 

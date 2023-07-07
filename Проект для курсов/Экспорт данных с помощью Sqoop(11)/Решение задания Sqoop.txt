@@ -1,0 +1,20 @@
+*Для запуска нужно скачать файл .jar (по ссылке) и перенести его копию в желаемую директорию.
+docker cp postgresql-42.2.27.jre7.jar epic_pascal:/tmp
+
+далее уже перейдя в /tmp вводим следующую строчку:
+sudo cp /tmp/postgresql-42.2.27.jre7.jar /var/lib/sqoop
+
+*Работа запроса:*
+
+*Экспорт из работы pig*
+sqoop export --connect jdbc:postgresql://host.docker.internal/postgres --username postgres --password postgres --table sales_sum_check --export-dir /path/to/sales_sum.csv
+
+*Вывод таблицы prod:*
+
+sqoop eval --connect jdbc:postgresql://host.docker.internal/postgres --query "SELECT * from prod" --username=postgres --password=postgres
+
+*Импорт*
+sqoop import --connect jdbc:postgresql://host.docker.internal/postgres --table prod --username=postgres --password=postgres --target-dir /user/cloudera/prod2 -- --shema=public
+
+*Проверка*
+sqoop eval --connect jdbc:postgresql://host.docker.internal/postgres --query "SELECT 1" --username=postgres --password=postgres
